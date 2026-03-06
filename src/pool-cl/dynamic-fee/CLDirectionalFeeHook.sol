@@ -23,7 +23,7 @@ contract CLDirectionalFeeHook is CLBaseHook {
     using PoolIdLibrary for PoolKey;
 
     // ─── Fee constants (in hundredths of a bip) ─────────────────────────────────
-    uint24 public constant INITIAL_FEE      = 10000; // 1.0%
+    uint24 public constant INITIAL_FEE = 10000; // 1.0%
     uint24 public constant ZERO_FOR_ONE_FEE = 10000; // 1.0%
     uint24 public constant ONE_FOR_ZERO_FEE = 15000; // 1.5%
 
@@ -64,11 +64,7 @@ contract CLDirectionalFeeHook is CLBaseHook {
     // ─── Hook callbacks ──────────────────────────────────────────────────────────
 
     /// @dev Called once after the pool is initialized. Sets the initial LP fee.
-    function _afterInitialize(address, PoolKey calldata key, uint160, int24)
-        internal
-        override
-        returns (bytes4)
-    {
+    function _afterInitialize(address, PoolKey calldata key, uint160, int24) internal override returns (bytes4) {
         PoolId poolId = key.toId();
         currentLPFee[poolId] = INITIAL_FEE;
         poolManager.updateDynamicLPFee(key, INITIAL_FEE);
@@ -79,12 +75,11 @@ contract CLDirectionalFeeHook is CLBaseHook {
     /// @dev Called before every swap. Sets the LP fee based on swap direction.
     ///      zeroForOne = true  → 1.0%
     ///      zeroForOne = false → 1.5%
-    function _beforeSwap(
-        address,
-        PoolKey calldata key,
-        ICLPoolManager.SwapParams calldata params,
-        bytes calldata
-    ) internal override returns (bytes4, BeforeSwapDelta, uint24) {
+    function _beforeSwap(address, PoolKey calldata key, ICLPoolManager.SwapParams calldata params, bytes calldata)
+        internal
+        override
+        returns (bytes4, BeforeSwapDelta, uint24)
+    {
         // Determine fee based on swap direction
         uint24 newFee = params.zeroForOne ? ZERO_FOR_ONE_FEE : ONE_FOR_ZERO_FEE;
 

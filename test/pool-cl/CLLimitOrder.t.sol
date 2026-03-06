@@ -150,11 +150,7 @@ contract CLLimitOrderHookTest is Test, Deployers, DeployPermit2 {
         // swapping is free, there's no liquidity in the pool, so we only need to specify 1 wei
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 1e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 1e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -181,11 +177,7 @@ contract CLLimitOrderHookTest is Test, Deployers, DeployPermit2 {
         // swapping is free, there's no liquidity in the pool, so we only need to specify 1 wei
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 1e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 1e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -248,11 +240,7 @@ contract CLLimitOrderHookTest is Test, Deployers, DeployPermit2 {
 
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 1e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 1e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );

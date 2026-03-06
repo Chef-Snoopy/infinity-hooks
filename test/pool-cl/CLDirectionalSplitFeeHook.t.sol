@@ -23,8 +23,9 @@ import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol"
 import {MockCLSwapRouter} from "./helpers/MockCLSwapRouter.sol";
 import {MockCLPositionManager} from "./helpers/MockCLPositionManager.sol";
 import {CLDirectionalSplitFeeHook} from "../../src/pool-cl/dynamic-fee/CLDirectionalSplitFeeHook.sol";
-import {CLDynamicFeeHookProtocolFeeController} from
-    "../../src/pool-cl/dynamic-fee/CLDynamicFeeHookProtocolFeeController.sol";
+import {
+    CLDynamicFeeHookProtocolFeeController
+} from "../../src/pool-cl/dynamic-fee/CLDynamicFeeHookProtocolFeeController.sol";
 
 contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
     using PoolIdLibrary for PoolKey;
@@ -121,7 +122,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         // zeroForOne: total ≈ 1.0% (9999)
         uint256 totalZeroForOne = hook.ZERO_FOR_ONE_LP_FEE() + hook.ZERO_FOR_ONE_PROTOCOL_FEE();
         assertEq(totalZeroForOne, 9999);
-        
+
         // oneForZero: total = 1.2% (12000)
         uint256 totalOneForZero = hook.ONE_FOR_ZERO_LP_FEE() + hook.ONE_FOR_ZERO_PROTOCOL_FEE();
         assertEq(totalOneForZero, 12000);
@@ -133,7 +134,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
     function test_InitialFeesAreSet() public view {
         assertEq(hook.currentLPFee(id), hook.INITIAL_LP_FEE());
         assertEq(hook.currentLPFee(id), 6666);
-        
+
         uint24 protocolFee = protocolFeeController.protocolFeeForPoolId(id);
         uint24 expectedProtocolFee = hook.INITIAL_PROTOCOL_FEE() | (uint24(hook.INITIAL_PROTOCOL_FEE()) << 12);
         assertEq(protocolFee, expectedProtocolFee);
@@ -144,7 +145,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         uint24 lpFee = hook.currentLPFee(id);
         uint24 protocolFee = protocolFeeController.protocolFeeForPoolId(id);
         uint24 protocolFeePerDirection = uint24(protocolFee & 0xFFF); // lower 12 bits
-        
+
         assertEq(lpFee, protocolFeePerDirection * 2);
     }
 
@@ -154,18 +155,14 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
     function test_ZeroForOneSwapSetsFees() public {
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 0.5e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 0.5e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
 
         assertEq(hook.currentLPFee(id), hook.ZERO_FOR_ONE_LP_FEE());
         assertEq(hook.currentLPFee(id), 6666);
-        
+
         uint24 protocolFee = protocolFeeController.protocolFeeForPoolId(id);
         uint24 protocolFeePerDirection = uint24(protocolFee & 0xFFF);
         assertEq(protocolFeePerDirection, hook.ZERO_FOR_ONE_PROTOCOL_FEE());
@@ -176,11 +173,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
     function test_OneForZeroSwapSetsFees() public {
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 0.5e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 0.5e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -188,7 +181,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         uint24 lpFee = hook.currentLPFee(id);
         uint24 protocolFee = hook.currentProtocolFee(id);
         uint24 protocolFeePerDirection = uint24(protocolFee & 0xFFF);
-        
+
         assertEq(lpFee, hook.ONE_FOR_ZERO_LP_FEE(), "LP fee mismatch");
         assertEq(lpFee, 8000, "LP fee should be 8000");
         assertEq(protocolFeePerDirection, hook.ONE_FOR_ZERO_PROTOCOL_FEE(), "Protocol fee mismatch");
@@ -199,11 +192,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
     function test_ZeroForOneMaintainsRatio() public {
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 0.5e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 0.5e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -211,7 +200,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         uint24 lpFee = hook.currentLPFee(id);
         uint24 protocolFee = protocolFeeController.protocolFeeForPoolId(id);
         uint24 protocolFeePerDirection = uint24(protocolFee & 0xFFF);
-        
+
         assertEq(lpFee, protocolFeePerDirection * 2);
     }
 
@@ -219,11 +208,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
     function test_OneForZeroMaintainsRatio() public {
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 0.5e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 0.5e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -231,7 +216,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         uint24 lpFee = hook.currentLPFee(id);
         uint24 protocolFee = hook.currentProtocolFee(id);
         uint24 protocolFeePerDirection = uint24(protocolFee & 0xFFF);
-        
+
         assertEq(lpFee, protocolFeePerDirection * 2);
     }
 
@@ -242,11 +227,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         // First swap: zeroForOne
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 0.3e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 0.3e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -255,11 +236,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         // Second swap: oneForZero
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 0.2e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 0.2e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -268,11 +245,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         // Third swap: back to zeroForOne
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 0.2e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 0.2e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -284,15 +257,11 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         // zeroForOne swap
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 0.3e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 0.3e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
-        
+
         uint24 lpFee1 = hook.currentLPFee(id);
         uint24 protocolFee1 = hook.currentProtocolFee(id) & 0xFFF;
         assertEq(lpFee1, protocolFee1 * 2);
@@ -300,15 +269,11 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         // oneForZero swap
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 0.2e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 0.2e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
-        
+
         uint24 lpFee2 = hook.currentLPFee(id);
         uint24 protocolFee2 = hook.currentProtocolFee(id) & 0xFFF;
         assertEq(lpFee2, protocolFee2 * 2);
@@ -323,11 +288,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
 
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 50e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 50e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -335,7 +296,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
         uint24 lpFee = hook.currentLPFee(id);
         uint24 protocolFee = hook.currentProtocolFee(id);
         uint24 protocolFeePerDirection = uint24(protocolFee & 0xFFF);
-        
+
         assertEq(lpFee, protocolFeePerDirection * 2);
         assertEq(lpFee, 8000);
         assertEq(protocolFeePerDirection, 4000);
@@ -350,11 +311,7 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
 
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 0.5e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 0.5e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -363,17 +320,13 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
     /// @notice ProtocolFeeUpdated event is emitted when fee changes
     function test_ProtocolFeeUpdatedEventEmitted() public {
         uint24 expectedProtocolFee = hook.ONE_FOR_ZERO_PROTOCOL_FEE() | (uint24(hook.ONE_FOR_ZERO_PROTOCOL_FEE()) << 12);
-        
+
         vm.expectEmit(true, false, false, true, address(hook));
         emit CLDirectionalSplitFeeHook.ProtocolFeeUpdated(id, expectedProtocolFee);
 
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 0.5e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 0.5e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -402,9 +355,9 @@ contract CLDirectionalSplitFeeHookTest is Test, Deployers, DeployPermit2 {
 
     /// @notice Only owner can set protocol fee controller
     function test_OnlyOwnerCanSetController() public {
-        CLDynamicFeeHookProtocolFeeController newController = 
+        CLDynamicFeeHookProtocolFeeController newController =
             new CLDynamicFeeHookProtocolFeeController(address(poolManager));
-        
+
         address nonOwner = address(0x1234);
         vm.prank(nonOwner);
         vm.expectRevert();

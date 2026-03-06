@@ -19,7 +19,9 @@ contract MockCLPositionManager is CLPositionManager, CommonBase {
     using Planner for Plan;
 
     constructor(IVault _vault, ICLPoolManager _clPoolManager, IAllowanceTransfer _permit2)
-        CLPositionManager(_vault, _clPoolManager, _permit2, 500000, ICLPositionDescriptor(address(0)), IWETH9(address(0)))
+        CLPositionManager(
+            _vault, _clPoolManager, _permit2, 500000, ICLPositionDescriptor(address(0)), IWETH9(address(0))
+        )
     {}
 
     function mint(
@@ -32,10 +34,11 @@ contract MockCLPositionManager is CLPositionManager, CommonBase {
         address owner,
         bytes calldata hookData
     ) external payable returns (uint256 tokenId, uint128 liquidityMinted) {
-        Plan memory planner = Planner.init().add(
-            Actions.CL_MINT_POSITION,
-            abi.encode(poolKey, tickLower, tickUpper, liquidity, amount0Max, amount1Max, owner, hookData)
-        );
+        Plan memory planner = Planner.init()
+            .add(
+                Actions.CL_MINT_POSITION,
+                abi.encode(poolKey, tickLower, tickUpper, liquidity, amount0Max, amount1Max, owner, hookData)
+            );
         bytes memory data = planner.finalizeModifyLiquidityWithClose(poolKey);
 
         tokenId = nextTokenId;
@@ -54,9 +57,8 @@ contract MockCLPositionManager is CLPositionManager, CommonBase {
         uint128 amount1Min,
         bytes calldata hookData
     ) external payable {
-        Plan memory planner = Planner.init().add(
-            Actions.CL_DECREASE_LIQUIDITY, abi.encode(tokenId, liquidity, amount0Min, amount1Min, hookData)
-        );
+        Plan memory planner = Planner.init()
+            .add(Actions.CL_DECREASE_LIQUIDITY, abi.encode(tokenId, liquidity, amount0Min, amount1Min, hookData));
         bytes memory data = planner.finalizeModifyLiquidityWithClose(poolKey);
 
         vm.prank(msg.sender);

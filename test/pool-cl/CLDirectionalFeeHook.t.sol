@@ -103,7 +103,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
 
     /// @notice Test that fee constants are set correctly
     function test_FeeConstants() public view {
-        assertEq(hook.INITIAL_FEE(), 10000);      // 1.0%
+        assertEq(hook.INITIAL_FEE(), 10000); // 1.0%
         assertEq(hook.ZERO_FOR_ONE_FEE(), 10000); // 1.0%
         assertEq(hook.ONE_FOR_ZERO_FEE(), 15000); // 1.5%
     }
@@ -112,11 +112,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
     function test_ZeroForOneSwapSetsFeeToOnePercent() public {
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 0.5e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 0.5e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -129,11 +125,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
     function test_OneForZeroSwapSetsFeeToOnePointFivePercent() public {
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 0.5e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 0.5e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -147,11 +139,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
         // First swap: zeroForOne=true → 1.0%
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 0.3e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 0.3e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -160,11 +148,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
         // Second swap: zeroForOne=false → 1.5%
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 0.2e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 0.2e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -173,11 +157,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
         // Third swap: back to zeroForOne=true → 1.0%
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 0.2e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 0.2e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -192,11 +172,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
         // First swap zeroForOne=true
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 0.1e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 0.1e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -205,11 +181,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
         // Second swap zeroForOne=true (same direction)
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 0.1e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 0.1e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -223,11 +195,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
 
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 50e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 50e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -244,11 +212,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
 
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 50e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 50e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -266,11 +230,7 @@ contract CLDirectionalFeeHookTest is Test, Deployers, DeployPermit2 {
 
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: false,
-                amountIn: 0.5e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: false, amountIn: 0.5e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );

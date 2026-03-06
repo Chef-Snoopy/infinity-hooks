@@ -206,11 +206,7 @@ contract BinLimitOrderHookTest is Test, Deployers, DeployPermit2 {
 
         swapRouter.exactInputSingle(
             IBinRouterBase.BinSwapExactInputSingleParams({
-                poolKey: key,
-                swapForY: false,
-                amountIn: 4 * 1e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, swapForY: false, amountIn: 4 * 1e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );

@@ -28,12 +28,12 @@ contract CLDynamicFeeHook is CLBaseHook, Ownable {
     using PoolIdLibrary for PoolKey;
 
     // ─── Fee tiers (in hundredths of a bip) ────────────────────────────────────
-    uint24 public constant BASE_LP_FEE = 3000;  // 0.30%
-    uint24 public constant MID_LP_FEE  = 5000;  // 0.50%
+    uint24 public constant BASE_LP_FEE = 3000; // 0.30%
+    uint24 public constant MID_LP_FEE = 5000; // 0.50%
     uint24 public constant HIGH_LP_FEE = 10000; // 1.00%
 
     // ─── Swap-size thresholds ───────────────────────────────────────────────────
-    uint256 public constant MID_SWAP_THRESHOLD  = 1e18;  // 1 token (18 decimals)
+    uint256 public constant MID_SWAP_THRESHOLD = 1e18; // 1 token (18 decimals)
     uint256 public constant HIGH_SWAP_THRESHOLD = 10e18; // 10 tokens (18 decimals)
 
     // ─── State ──────────────────────────────────────────────────────────────────
@@ -96,11 +96,7 @@ contract CLDynamicFeeHook is CLBaseHook, Ownable {
     // ─── Hook callbacks ──────────────────────────────────────────────────────────
 
     /// @dev Called once after the pool is initialized. Sets the initial LP fee to BASE_LP_FEE.
-    function _afterInitialize(address, PoolKey calldata key, uint160, int24)
-        internal
-        override
-        returns (bytes4)
-    {
+    function _afterInitialize(address, PoolKey calldata key, uint160, int24) internal override returns (bytes4) {
         PoolId poolId = key.toId();
         currentLPFee[poolId] = BASE_LP_FEE;
         poolManager.updateDynamicLPFee(key, BASE_LP_FEE);
@@ -118,9 +114,8 @@ contract CLDynamicFeeHook is CLBaseHook, Ownable {
         bytes calldata
     ) internal override returns (bytes4, int128) {
         // Derive the absolute value of the swap amount
-        uint256 absAmount = params.amountSpecified < 0
-            ? uint256(-params.amountSpecified)
-            : uint256(params.amountSpecified);
+        uint256 absAmount =
+            params.amountSpecified < 0 ? uint256(-params.amountSpecified) : uint256(params.amountSpecified);
 
         // Tiered fee based on swap size
         uint24 newFee;

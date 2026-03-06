@@ -23,8 +23,9 @@ import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol"
 import {MockCLSwapRouter} from "./helpers/MockCLSwapRouter.sol";
 import {MockCLPositionManager} from "./helpers/MockCLPositionManager.sol";
 import {CLDynamicFeeHook} from "../../src/pool-cl/dynamic-fee/CLDynamicFeeHook.sol";
-import {CLDynamicFeeHookProtocolFeeController} from
-    "../../src/pool-cl/dynamic-fee/CLDynamicFeeHookProtocolFeeController.sol";
+import {
+    CLDynamicFeeHookProtocolFeeController
+} from "../../src/pool-cl/dynamic-fee/CLDynamicFeeHookProtocolFeeController.sol";
 
 contract CLDynamicFeeHookTest is Test, Deployers, DeployPermit2 {
     using PoolIdLibrary for PoolKey;
@@ -172,11 +173,7 @@ contract CLDynamicFeeHookTest is Test, Deployers, DeployPermit2 {
         cpm.mint(key, -120, 120, 1000e18, 1000e18, 1000e18, address(this), ZERO_BYTES);
         swapRouter.exactInputSingle(
             ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: 15e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, zeroForOne: true, amountIn: 15e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );

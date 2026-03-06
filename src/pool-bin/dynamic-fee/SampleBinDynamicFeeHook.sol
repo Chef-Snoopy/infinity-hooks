@@ -75,11 +75,12 @@ contract SampleBinDynamicFeeHook is BinBaseHook {
     {
         // if enableLPFeeOverride, the lp fee for the ongoing swap will be 0
         if (enableLPFeeOverride) {
-            return (
-                this.beforeSwap.selector,
-                BeforeSwapDeltaLibrary.ZERO_DELTA,
-                LPFeeLibrary.OVERRIDE_FEE_FLAG & FREE_LP_FEE
-            );
+            return
+                (
+                    this.beforeSwap.selector,
+                    BeforeSwapDeltaLibrary.ZERO_DELTA,
+                    LPFeeLibrary.OVERRIDE_FEE_FLAG & FREE_LP_FEE
+                );
         }
 
         return (this.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);

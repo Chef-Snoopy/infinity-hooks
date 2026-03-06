@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, Vm} from "forge-std/Test.sol";
 
 import {ICLPoolManager} from "infinity-core/src/pool-cl/interfaces/ICLPoolManager.sol";
 import {IVault} from "infinity-core/src/interfaces/IVault.sol";
@@ -23,6 +23,9 @@ import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol"
 import {MockCLSwapRouter} from "./helpers/MockCLSwapRouter.sol";
 import {MockCLPositionManager} from "./helpers/MockCLPositionManager.sol";
 import {CLSwapFeeHook} from "../../src/pool-cl/swap-fee/CLSwapFeeHook.sol";
+import {BalanceDelta} from "infinity-core/src/types/BalanceDelta.sol";
+import {BalanceDeltaLibrary} from "infinity-core/src/types/BalanceDelta.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract CLSwapFeeHookTest is Test, Deployers, DeployPermit2 {
     using PoolIdLibrary for PoolKey;
@@ -79,12 +82,27 @@ contract CLSwapFeeHookTest is Test, Deployers, DeployPermit2 {
 
         poolManager.initialize(key, SQRT_RATIO_1_1);
         cpm.mint(key, -120, 120, 10e18, 1e18, 1e18, address(this), ZERO_BYTES);
+        cpm.mint(key, -120, 120, 100e18, 100e18, 100e18, address(this), ZERO_BYTES);
 
         // Enable fee for both tokens and set rates (1% sell, 0.5% buy)
         hook.setTokenChargeFee(currency0, true);
         hook.setTokenChargeFee(currency1, true);
         hook.setSellFeeRate(10_000); // 1%
-        hook.setBuyFeeRate(5_000);   // 0.5%
+        hook.setBuyFeeRate(5_000); // 0.5%
+    }
+
+    /// @dev Helper to execute a swap using the swapRouter
+    function doSwap(uint256 amountIn, bool zeroForOne) internal {
+        swapRouter.exactInputSingle(
+            ICLRouterBase.CLSwapExactInputSingleParams({
+                poolKey: key,
+                zeroForOne: zeroForOne,
+                amountIn: uint128(amountIn),
+                amountOutMinimum: 0,
+                hookData: ZERO_BYTES
+            }),
+            block.timestamp
+        );
     }
 
     /// @notice No fee when sell fee rate is 0 (hook state only; swap with this hook needs lock to settle hook delta)
@@ -102,21 +120,6 @@ contract CLSwapFeeHookTest is Test, Deployers, DeployPermit2 {
         assertEq(hook.feesCollected(currency0), 0);
     }
 
-    /// @notice When sell fee is enabled, swap reverts with CurrencyNotSettled (router does not settle hook delta)
-    function test_SellFeeRevertsWithoutSettlement() public {
-        vm.expectRevert();
-        swapRouter.exactInputSingle(
-            ICLRouterBase.CLSwapExactInputSingleParams({
-                poolKey: key,
-                zeroForOne: true,
-                amountIn: uint128(1e18),
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
-            }),
-            block.timestamp
-        );
-    }
-
     /// @notice Sell fee disabled: fee rate 0 and token disabled mean no fee collected on swap
     function test_SellNoFeeWhenDisabled() public {
         hook.setSellFeeRate(0);
@@ -125,21 +128,30 @@ contract CLSwapFeeHookTest is Test, Deployers, DeployPermit2 {
         assertEq(hook.tokenChargeFee(currency0), false);
     }
 
-    /// @notice Owner can withdraw fees when hook holds tokens (e.g. after settleFeesInLock)
+    /// @notice Owner can withdraw accrued fees (V1 style: burn vault claims + take to recipient)
     function test_OwnerWithdrawFees() public {
-        uint256 feeAmount = 0.01e18;
-        token0.transfer(address(hook), feeAmount);
-        uint256 bal0Before = token0.balanceOf(owner);
-        hook.withdrawFees(currency0, owner, feeAmount);
-        assertEq(token0.balanceOf(owner), bal0Before + feeAmount, "owner should receive withdrawn fees");
+        hook.setSellFeeRate(0);
+        uint256 amountIn = 2e18;
+        doSwap(amountIn, true);
+
+        uint256 accrued = hook.accruedFees(currency1);
+        assertGt(accrued, 0, "accrued buy fee");
+        uint256 bal1Before = token1.balanceOf(owner);
+        hook.withdrawFees(currency1, owner, 0); // 0 = withdraw all
+        assertEq(token1.balanceOf(owner), bal1Before + accrued, "owner should receive withdrawn fees");
+        assertEq(hook.accruedFees(currency1), 0, "accrued should be zero after withdraw");
     }
 
     /// @notice Non-owner cannot withdraw
     function test_NonOwnerCannotWithdraw() public {
-        token0.transfer(address(hook), 0.01e18);
+        hook.setSellFeeRate(0);
+        doSwap(2e18, true);
+        uint256 accrued = hook.accruedFees(currency1);
+        assertGt(accrued, 0);
+
         vm.prank(address(0x123));
         vm.expectRevert();
-        hook.withdrawFees(currency0, address(0x123), 0.01e18);
+        hook.withdrawFees(currency1, address(0x123), accrued);
     }
 
     /// @notice setSellFeeRate and setBuyFeeRate onlyOwner
@@ -167,10 +179,19 @@ contract CLSwapFeeHookTest is Test, Deployers, DeployPermit2 {
         hook.setBuyFeeRate(1_000_001);
     }
 
-    /// @notice Withdraw zero amount reverts
-    function test_WithdrawZeroReverts() public {
-        vm.expectRevert(CLSwapFeeHook.ZeroAmount.selector);
-        hook.withdrawFees(currency0, owner, 0);
+    /// @notice Withdraw more than accrued reverts
+    function test_WithdrawInsufficientAccruedReverts() public {
+        assertEq(hook.accruedFees(currency0), 0);
+        vm.expectRevert(CLSwapFeeHook.InsufficientAccruedFees.selector);
+        hook.withdrawFees(currency0, owner, 1);
+    }
+
+    /// @notice Withdraw to zero address reverts
+    function test_WithdrawToZeroReverts() public {
+        hook.setSellFeeRate(0);
+        doSwap(2e18, true);
+        vm.expectRevert(CLSwapFeeHook.ZeroAddress.selector);
+        hook.withdrawFees(currency1, address(0), 0);
     }
 
     /// @notice Fee constants
@@ -186,13 +207,112 @@ contract CLSwapFeeHookTest is Test, Deployers, DeployPermit2 {
         assertEq(hook.feesCollected(currency1), 0);
     }
 
-    /// @notice settleFeesInLock zeros hook vault delta (callable by anyone during lock)
-    function test_SettleFeesInLock() public {
-        // Hook has no vault delta initially
-        assertEq(vault.currencyDelta(address(hook), currency0), 0);
-        assertEq(vault.currencyDelta(address(hook), currency1), 0);
-        // After a hypothetical credit, settleFeesInLock would take to self; here we just call it (no-op)
-        hook.settleFeesInLock(currency0);
-        hook.settleFeesInLock(currency1);
+    // ─── Input token (sell) fee: computed vs contract data & events ────────────────────────
+
+    /// @notice Charge fee on INPUT token (sell token0): compare computed fee, feesCollected and hook balance
+    function test_InputTokenFee_ComputedVsContractAndEvent() public {
+        hook.setBuyFeeRate(0); // only test input fee
+        uint256 amountIn = 2e18;
+        uint256 sellRate = hook.sellFeeRate(); // 10_000 = 1%
+        uint256 expectedInputFee = (amountIn * sellRate) / hook.FEE_DENOMINATOR();
+
+        uint256 feesCollected0Before = hook.feesCollected(currency0);
+        vm.recordLogs();
+        doSwap(amountIn, true);
+
+        uint256 feesCollected0After = hook.feesCollected(currency0);
+
+        assertEq(
+            feesCollected0After - feesCollected0Before, expectedInputFee, "feesCollected delta vs computed input fee"
+        );
+        assertEq(hook.accruedFees(currency0), expectedInputFee, "accruedFees(currency0) = sell fee (vault claims)");
+        assertEq(token0.balanceOf(address(hook)), 0, "hook holds vault claims, not ERC20");
+
+        // Event: FeeCollected(currency0, expectedInputFee) — compare event amount with computed fee
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bool foundInputFeeEvent;
+        for (uint256 i; i < logs.length; i++) {
+            if (logs[i].emitter == address(hook) && logs[i].data.length >= 32) {
+                uint256 amount = abi.decode(logs[i].data, (uint256));
+                if (
+                    amount == expectedInputFee
+                        && logs[i].topics[1] == bytes32(uint256(uint160(Currency.unwrap(currency0))))
+                ) {
+                    foundInputFeeEvent = true;
+                    break;
+                }
+            }
+        }
+        assertTrue(foundInputFeeEvent, "FeeCollected event for input token (amount + currency match computed fee)");
+    }
+
+    /// @notice Charge fee on OUTPUT token (buy token1): compare computed fee, feesCollected and accruedFees
+    function test_OutputTokenFee_ComputedVsContractAndEvent() public {
+        hook.setSellFeeRate(0); // disable input fee for clearer test
+        uint256 amountIn = 2e18;
+        uint256 buyRate = hook.buyFeeRate(); // 5_000 = 0.5%
+
+        uint256 feesCollected1Before = hook.feesCollected(currency1);
+        uint256 bal1Before = token1.balanceOf(address(this));
+
+        vm.recordLogs();
+        doSwap(amountIn, true);
+
+        uint256 bal1After = token1.balanceOf(address(this));
+        uint256 outputReceived = bal1After - bal1Before;
+
+        // Output fee: user receives less by fee amount
+        // If rawOutput from pool = X, fee = X * buyRate / FEE_DENOMINATOR, user gets X - fee
+        // So: outputReceived = rawOutput - fee = rawOutput * (1 - buyRate/FEE_DENOMINATOR)
+        // => rawOutput = outputReceived / (1 - buyRate/FEE_DENOMINATOR)
+        // => fee = rawOutput * buyRate / FEE_DENOMINATOR
+        uint256 rawOutput = (outputReceived * hook.FEE_DENOMINATOR()) / (hook.FEE_DENOMINATOR() - buyRate);
+        uint256 expectedOutputFee = rawOutput - outputReceived;
+
+        uint256 feesCollected1After = hook.feesCollected(currency1);
+        assertEq(
+            feesCollected1After - feesCollected1Before,
+            expectedOutputFee,
+            "feesCollected(currency1) vs computed output fee"
+        );
+        assertEq(
+            hook.accruedFees(currency1), expectedOutputFee, "accruedFees(currency1) equals output fee (vault claims)"
+        );
+
+        // Event: FeeCollected(currency1, expectedOutputFee) — compare event amount with computed fee
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bool foundOutputFeeEvent;
+        for (uint256 i; i < logs.length; i++) {
+            if (logs[i].emitter == address(hook) && logs[i].data.length >= 32) {
+                uint256 amount = abi.decode(logs[i].data, (uint256));
+                if (
+                    amount == expectedOutputFee
+                        && logs[i].topics[1] == bytes32(uint256(uint160(Currency.unwrap(currency1))))
+                ) {
+                    foundOutputFeeEvent = true;
+                    break;
+                }
+            }
+        }
+        assertTrue(foundOutputFeeEvent, "FeeCollected event for output token (amount + currency match computed fee)");
+    }
+
+    /// @notice Both input and output fee in one swap: verify both fees and totals
+    function test_InputAndOutputFee_BothComputedAndMatchContract() public {
+        uint256 amountIn = 3e18;
+        uint256 sellRate = hook.sellFeeRate();
+        uint256 buyRate = hook.buyFeeRate();
+        uint256 expectedInputFee = (amountIn * sellRate) / hook.FEE_DENOMINATOR();
+
+        uint256 bal1Before = token1.balanceOf(address(this));
+        doSwap(amountIn, true);
+        uint256 bal1After = token1.balanceOf(address(this));
+
+        uint256 outputReceived = bal1After - bal1Before;
+        uint256 rawOutput = (outputReceived * hook.FEE_DENOMINATOR()) / (hook.FEE_DENOMINATOR() - buyRate);
+        uint256 expectedOutputFee = rawOutput - outputReceived;
+
+        assertEq(hook.feesCollected(currency0), expectedInputFee, "input fee: computed vs contract");
+        assertEq(hook.feesCollected(currency1), expectedOutputFee, "output fee: computed vs contract");
     }
 }
