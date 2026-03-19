@@ -313,7 +313,9 @@ abstract contract CLBaseHook is ICLHooks {
                 | (permissions.beforeSwapReturnDelta ? 1 << HOOKS_BEFORE_SWAP_RETURNS_DELTA_OFFSET : 0)
                 | (permissions.afterSwapReturnDelta ? 1 << HOOKS_AFTER_SWAP_RETURNS_DELTA_OFFSET : 0)
                 | (permissions.afterAddLiquidityReturnDelta ? 1 << HOOKS_AFTER_ADD_LIQUIDIY_RETURNS_DELTA_OFFSET : 0)
-                | (permissions.afterRemoveLiquidityReturnDelta ? 1 << HOOKS_AFTER_REMOVE_LIQUIDIY_RETURNS_DELTA_OFFSET : 0)
+                | (permissions.afterRemoveLiquidityReturnDelta
+                        ? 1 << HOOKS_AFTER_REMOVE_LIQUIDIY_RETURNS_DELTA_OFFSET
+                        : 0)
         );
     }
 }

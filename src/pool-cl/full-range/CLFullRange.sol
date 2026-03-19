@@ -188,10 +188,7 @@ contract CLFullRange is CLBaseHook {
         BalanceDelta addedDelta = _modifyPosition(
             key,
             ICLPoolManager.ModifyLiquidityParams({
-                tickLower: MIN_TICK,
-                tickUpper: MAX_TICK,
-                liquidityDelta: liquidity.toInt256(),
-                salt: bytes32(0)
+                tickLower: MIN_TICK, tickUpper: MAX_TICK, liquidityDelta: liquidity.toInt256(), salt: bytes32(0)
             })
         );
 
@@ -411,11 +408,10 @@ contract CLFullRange is CLBaseHook {
             ZERO_BYTES
         );
 
-        uint160 newSqrtPriceX96 = (
-            FixedPointMathLib.sqrt(
-                FullMath.mulDiv(uint128(balanceDelta.amount1()), FixedPoint96.Q96, uint128(balanceDelta.amount0()))
-            ) * FixedPointMathLib.sqrt(FixedPoint96.Q96)
-        ).toUint160();
+        uint160 newSqrtPriceX96 = (FixedPointMathLib.sqrt(
+                    FullMath.mulDiv(uint128(balanceDelta.amount1()), FixedPoint96.Q96, uint128(balanceDelta.amount0()))
+                ) * FixedPointMathLib.sqrt(FixedPoint96.Q96))
+        .toUint160();
 
         (uint160 sqrtPriceX96,,,) = poolManager.getSlot0(poolId);
 
@@ -440,10 +436,7 @@ contract CLFullRange is CLBaseHook {
         (BalanceDelta balanceDeltaAfter,) = poolManager.modifyLiquidity(
             key,
             ICLPoolManager.ModifyLiquidityParams({
-                tickLower: MIN_TICK,
-                tickUpper: MAX_TICK,
-                liquidityDelta: liquidity.toInt256(),
-                salt: bytes32(0)
+                tickLower: MIN_TICK, tickUpper: MAX_TICK, liquidityDelta: liquidity.toInt256(), salt: bytes32(0)
             }),
             ZERO_BYTES
         );

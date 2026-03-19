@@ -312,15 +312,13 @@ contract BinLimitOrder is BinBaseHook {
 
         if (delta.amount0() < 0) {
             vault.sync(key.currency0);
-            IERC20(Currency.unwrap(key.currency0)).safeTransferFrom(
-                owner, address(vault), uint256(uint128(-delta.amount0()))
-            );
+            IERC20(Currency.unwrap(key.currency0))
+                .safeTransferFrom(owner, address(vault), uint256(uint128(-delta.amount0())));
             vault.settle();
         } else {
             vault.sync(key.currency1);
-            IERC20(Currency.unwrap(key.currency1)).safeTransferFrom(
-                owner, address(vault), uint256(uint128(-delta.amount1()))
-            );
+            IERC20(Currency.unwrap(key.currency1))
+                .safeTransferFrom(owner, address(vault), uint256(uint128(-delta.amount1())));
             vault.settle();
         }
     }

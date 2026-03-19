@@ -301,17 +301,15 @@ contract CLLimitOrder is CLBaseHook {
             if (delta.amount1() != 0) revert InRange();
             if (!zeroForOne) revert CrossedRange();
             vault.sync(key.currency0);
-            IERC20(Currency.unwrap(key.currency0)).safeTransferFrom(
-                owner, address(vault), uint256(uint128(-delta.amount0()))
-            );
+            IERC20(Currency.unwrap(key.currency0))
+                .safeTransferFrom(owner, address(vault), uint256(uint128(-delta.amount0())));
             vault.settle();
         } else {
             if (delta.amount0() != 0) revert InRange();
             if (zeroForOne) revert CrossedRange();
             vault.sync(key.currency1);
-            IERC20(Currency.unwrap(key.currency1)).safeTransferFrom(
-                owner, address(vault), uint256(uint128(-delta.amount1()))
-            );
+            IERC20(Currency.unwrap(key.currency1))
+                .safeTransferFrom(owner, address(vault), uint256(uint128(-delta.amount1())));
             vault.settle();
         }
     }
@@ -375,10 +373,7 @@ contract CLLimitOrder is CLBaseHook {
             (BalanceDelta deltaFee,) = poolManager.modifyLiquidity(
                 key,
                 ICLPoolManager.ModifyLiquidityParams({
-                    tickLower: tickLower,
-                    tickUpper: tickUpper,
-                    liquidityDelta: 0,
-                    salt: bytes32(0)
+                    tickLower: tickLower, tickUpper: tickUpper, liquidityDelta: 0, salt: bytes32(0)
                 }),
                 ZERO_BYTES
             );
@@ -394,10 +389,7 @@ contract CLLimitOrder is CLBaseHook {
         (BalanceDelta delta,) = poolManager.modifyLiquidity(
             key,
             ICLPoolManager.ModifyLiquidityParams({
-                tickLower: tickLower,
-                tickUpper: tickUpper,
-                liquidityDelta: liquidityDelta,
-                salt: bytes32(0)
+                tickLower: tickLower, tickUpper: tickUpper, liquidityDelta: liquidityDelta, salt: bytes32(0)
             }),
             ZERO_BYTES
         );

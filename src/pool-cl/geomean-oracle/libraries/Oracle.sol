@@ -62,10 +62,7 @@ library Oracle {
         returns (uint16 cardinality, uint16 cardinalityNext)
     {
         self[0] = Observation({
-            blockTimestamp: time,
-            tickCumulative: 0,
-            secondsPerLiquidityCumulativeX128: 0,
-            initialized: true
+            blockTimestamp: time, tickCumulative: 0, secondsPerLiquidityCumulativeX128: 0, initialized: true
         });
         return (1, 1);
     }
@@ -288,15 +285,14 @@ library Oracle {
                 return (
                     beforeOrAt.tickCumulative
                         + ((atOrAfter.tickCumulative - beforeOrAt.tickCumulative) / int56(uint56(observationTimeDelta)))
-                            * int56(uint56(targetDelta)),
+                        * int56(uint56(targetDelta)),
                     beforeOrAt.secondsPerLiquidityCumulativeX128
                         + uint160(
-                            (
-                                uint256(
-                                    atOrAfter.secondsPerLiquidityCumulativeX128
-                                        - beforeOrAt.secondsPerLiquidityCumulativeX128
-                                ) * targetDelta
-                            ) / observationTimeDelta
+                            (uint256(
+                                        atOrAfter.secondsPerLiquidityCumulativeX128
+                                            - beforeOrAt.secondsPerLiquidityCumulativeX128
+                                    )
+                                    * targetDelta) / observationTimeDelta
                         )
                 );
             }

@@ -121,11 +121,7 @@ contract BinVeCakeExclusiveHookTest is Test, Deployers, DeployPermit2 {
         );
         swapRouter.exactInputSingle(
             IBinRouterBase.BinSwapExactInputSingleParams({
-                poolKey: key,
-                swapForY: true,
-                amountIn: 1e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, swapForY: true, amountIn: 1e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
@@ -135,11 +131,7 @@ contract BinVeCakeExclusiveHookTest is Test, Deployers, DeployPermit2 {
         vm.prank(address(this), address(this));
         swapRouter.exactInputSingle(
             IBinRouterBase.BinSwapExactInputSingleParams({
-                poolKey: key,
-                swapForY: true,
-                amountIn: 1e18,
-                amountOutMinimum: 0,
-                hookData: ZERO_BYTES
+                poolKey: key, swapForY: true, amountIn: 1e18, amountOutMinimum: 0, hookData: ZERO_BYTES
             }),
             block.timestamp
         );
